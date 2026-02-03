@@ -9,6 +9,11 @@ services:
     # if you need to do this, you can override this setting on individual services
     public: false
 
+  FixtureBundle\Installer\Installer:
+    public: true
+    arguments:
+      $bundle: '@=service("kernel").getBundle("FixtureBundle")'
+
   FixtureBundle\Command\:
     resource: '../../Command'
     tags: ['console.command']

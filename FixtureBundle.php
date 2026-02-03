@@ -1,22 +1,31 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: jorisros
- * Date: 07/01/2018
- * Time: 03:48
- */
+
+declare(strict_types=1);
 
 namespace FixtureBundle;
 
+use FixtureBundle\Installer\Installer;
+use Pimcore;
 use Pimcore\Extension\Bundle\AbstractPimcoreBundle;
+use Pimcore\Extension\Bundle\Installer\InstallerInterface;
 use Pimcore\Extension\Bundle\Traits\PackageVersionTrait;
 
 class FixtureBundle extends AbstractPimcoreBundle
 {
-	use PackageVersionTrait;
+    use PackageVersionTrait;
 
-    protected function getComposerPackageName()
+    protected function getComposerPackageName(): string
     {
         return 'youwe/pimcore-fixtures';
-    } 
+    }
+
+    public function getInstaller(): ?InstallerInterface
+    {
+        $container = Pimcore::getContainer();
+        if ($container === null || !$container->has(Installer::class)) {
+            return null;
+        }
+
+        return $container->get(Installer::class);
+    }
 }

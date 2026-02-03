@@ -11,8 +11,40 @@ composer require youwe/pimcore-fixtures
 ```
 *This plugin is only for DEV, do NOT install on a production server*
 
+### Enable the bundle
+
+The bundle must be **enabled** before you can run `pimcore:bundle:install`. Use either option:
+
+**Option A – `config/bundles.php`** (in your project root):
+
+```php
+return [
+    // ... existing bundles ...
+    \FixtureBundle\FixtureBundle::class => ['all' => true],
+];
+```
+
+**Option B – `App\Kernel`** ([Bundle Collection](https://docs.pimcore.com/platform/Pimcore/Extending_Pimcore/Bundle_Developers_Guide/Bundle_Collection/)):
+
+```php
+use FixtureBundle\FixtureBundle;
+
+public function registerBundlesToCollection(BundleCollection $collection): void
+{
+    // ... existing bundles ...
+    $collection->addBundle(new FixtureBundle());
+}
+```
+
+Then run:
+
+```sh
+php bin/console pimcore:bundle:install FixtureBundle
+php bin/console pimcore:bundle:list   # verify Enabled ✔ and Installed ✔
+```
+
 ### How to load fixtures
-You must enable the bundle as followed `php bin/console pimcore:bundle:enable FixtureBundle`. To check if the bundle is installed correctly `php bin/console  pimcore:bundle:list`.
+
 Place your fixtures in `/var/bundles/FixtureBundle/fixtures` named "001_object_name.yml", "002_object_name.yml" etc.
 
 Example fixture for creating a folder
