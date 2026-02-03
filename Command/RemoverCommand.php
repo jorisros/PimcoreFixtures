@@ -8,14 +8,14 @@ use Pimcore\Model\Asset;
 use Pimcore\Model\Document;
 use Pimcore\Model\Element\ElementInterface;
 use Pimcore\Model\Element\Service;
-use Pimcore\Model\Object\AbstractObject;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Pimcore\Model\DataObject\AbstractObject;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Symfony\Component\Console\Command\Command;
 
 class RemoverCommand extends AbstractCommand
 {
@@ -36,7 +36,7 @@ class RemoverCommand extends AbstractCommand
      *
      * @return int|void
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $helper = $this->getHelper('question');
 
@@ -50,7 +50,7 @@ class RemoverCommand extends AbstractCommand
             $confirmationQuestion = $this->askForConfirmation($output, $type, $path, $onlyChildren);
 
             if (!$helper->ask($input, $output, $confirmationQuestion)) {
-                return;
+                return Command::FAILURE;
             }
         }
         /** @var AbstractObject|Document|Asset $element */
@@ -71,6 +71,8 @@ class RemoverCommand extends AbstractCommand
         $progress->clear();
 
         $output->writeln(sprintf('<info>Done deleting %b elements at "%s"</info>', $progress->getMaxSteps(), $path));
+
+        return Command::SUCCESS;
     }
 
     /**
@@ -94,9 +96,9 @@ class RemoverCommand extends AbstractCommand
             throw new \RuntimeException('Only yes/no is allowed as onlyChildren');
         }
 
-        if ($onlyChildren === 'yes' && method_exists($element, 'getChilds') === false) {
+        if ($onlyChildren === 'yes' && method_exists($element, 'getChildren') === false) {
             $className = get_class($element);
-            throw new \RuntimeException("Only children is '$onlyChildren' but '$className' doesn't have a 'getChilds' method");
+            throw new \RuntimeException("Only children is '$onlyChildren' but '$className' doesn't have a 'getChildren' method");
         }
     }
 
@@ -132,7 +134,7 @@ class RemoverCommand extends AbstractCommand
     protected function getChildren($element)
     {
         if ($element instanceof AbstractObject) {
-            $children = $element->getChilds([
+            $children = $element->getChildren([
                 AbstractObject::OBJECT_TYPE_FOLDER,
                 AbstractObject::OBJECT_TYPE_OBJECT,
                 AbstractObject::OBJECT_TYPE_VARIANT
@@ -140,7 +142,7 @@ class RemoverCommand extends AbstractCommand
 
             return $children;
         } else { // document or asset instanceof  Element\AbstractElement
-            $children = $element->getChilds(true);
+            $children = $element->getChildren(true);
 
             return $children;
         }

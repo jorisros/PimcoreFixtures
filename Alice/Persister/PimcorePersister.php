@@ -119,9 +119,9 @@ class PimcorePersister implements PersisterInterface
     }
 
     /**
-     * @param AbstractObject $object
+     * @param object $object Any Pimcore model with a save() method (Redirect, Permission\Definition, Workspace, etc.)
      */
-    private function persistClassWithSave(AbstractObject $object)
+    private function persistClassWithSave(object $object): void
     {
         $object->save();
     }

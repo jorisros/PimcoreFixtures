@@ -6,18 +6,13 @@ use FixtureBundle\Repository\FolderRepository;
 use FixtureBundle\Service\FixtureLoader;
 use FixtureBundle\Service\Generator;
 use Pimcore\Console\AbstractCommand;
-use Pimcore\Model\Element\AbstractElement;
-use Pimcore\Model\DataObject\AbstractObject;
 use Pimcore\Model\DataObject\Folder;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
-use Symfony\Component\Validator\Constraints\Choice;
+use Symfony\Component\Console\Command\Command;
 
 class GenerateFixturesCommand extends AbstractCommand
 {
@@ -34,7 +29,7 @@ class GenerateFixturesCommand extends AbstractCommand
      *
      * @return int|void
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
 
         $helper = $this->getHelper('question');
@@ -64,7 +59,7 @@ class GenerateFixturesCommand extends AbstractCommand
         );
 
         if (!$helper->ask($input, $output, $confirmationQuestion)) {
-            return;
+            return Command::FAILURE;
         }
 
         foreach (glob(FixtureLoader::FIXTURE_FOLDER . '_generated' . DIRECTORY_SEPARATOR . '*.yml') as $file){
@@ -77,6 +72,7 @@ class GenerateFixturesCommand extends AbstractCommand
         $generator->generateFixturesForFolder();
         $output->writeln('<info>Done. Your fixtures are at: "' . FixtureLoader::FIXTURE_FOLDER . '".</info>');
 
+        return Command::SUCCESS;
     }
 
     private function formatFoldersToCommandChoices()

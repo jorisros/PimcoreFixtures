@@ -2,6 +2,8 @@
 
 Based on [Alice](https://github.com/nelmio/alice)
 
+**Compatibility:** Pimcore 12.x (PHP 8.3+)
+
 ### How to install
 
 ```sh
@@ -17,7 +19,7 @@ Example fixture for creating a folder
 ```yaml
 # 001_folders.yml
 # Object folders
-Pimcore\Model\Object\Folder:
+Pimcore\Model\DataObject\Folder:
     products_folder:
         key: products
         path: /
@@ -26,7 +28,7 @@ Pimcore\Model\Object\Folder:
 Load them with:
 #### Console
 ```sh
-php bin/console fixture:load --with-cache
+php bin/console fixtures:load --with-cache
 ```
 Load individual files with --files comma separated files without yml extension:
 #### Console

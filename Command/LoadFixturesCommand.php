@@ -2,10 +2,10 @@
 
 namespace FixtureBundle\Command;
 
+use Doctrine\DBAL\Connection;
 use FixtureBundle\Service\FixtureLoader;
-use Pimcore\Config;
 use Pimcore\Console\AbstractCommand;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -14,8 +14,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class LoadFixturesCommand extends AbstractCommand
 {
-    /** @var FixtureLoader */
-    private FixtureLoader $fixtureLoader;
+    public function __construct(
+        private readonly FixtureLoader $fixtureLoader,
+        private readonly Connection $connection
+    ) {
+        parent::__construct();
+    }
 
     protected function configure()
     {
@@ -29,7 +33,7 @@ class LoadFixturesCommand extends AbstractCommand
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
 
         $withCache = $input->getOption('with-cache');
@@ -47,12 +51,10 @@ class LoadFixturesCommand extends AbstractCommand
             $progress->start();
             $progress->setFormat(" %current%/%max% [%bar%] <info>%percent:3s%% %elapsed:6s% %memory:6s%\t%message%</info>");
 
-            $this->fixtureLoader->load($fixtureFiles);
-            $fixtureLoader = new FixtureLoader();
             foreach ($fixtureFiles as $fixtureFile) {
                 $progress->setMessage('<comment>Loading</comment>  ' . str_replace(defined('PIMCORE_PRIVATE_VAR') ? PIMCORE_PRIVATE_VAR : PIMCORE_WEBSITE_VAR, '', $fixtureFile));
+                $this->fixtureLoader->load([$fixtureFile]);
                 $progress->advance();
-                $fixtureLoader->load($fixtureFile);
             }
 
             if ($withCache === true) {
@@ -72,6 +74,7 @@ class LoadFixturesCommand extends AbstractCommand
             }
         }
 
+        return Command::SUCCESS;
     }
 
 
@@ -90,13 +93,10 @@ class LoadFixturesCommand extends AbstractCommand
     /**
      * @param $destination
      */
-    private function cacheFixtures($destination)
+    private function cacheFixtures(string $destination): void
     {
-        $conf = Config::getSystemConfiguration();
-
-        //Store the mysql credentials else mysql will complain
-
-        $temp = $this->getTemporaryCredentialsFile();
+        $params = $this->getConnectionParams();
+        $temp = $this->getTemporaryCredentialsFile($params);
 
         $metaData = stream_get_meta_data($temp);
         $tmpFilePath = $metaData['uri'];
@@ -104,8 +104,8 @@ class LoadFixturesCommand extends AbstractCommand
         $dumpCommand = join(' ', [
             'mysqldump',
             '--defaults-file=' . $tmpFilePath,
-            '--databases ' . $conf->database->params->dbname,
-            '--port ' . $conf->database->params->port,
+            '--databases ' . $params['dbname'],
+            '--port ' . ($params['port'] ?? 3306),
             '--no-autocommit',
             '--single-transaction',
             '> ' . $destination
@@ -113,38 +113,56 @@ class LoadFixturesCommand extends AbstractCommand
 
         system($dumpCommand);
 
-        fclose($temp); // this removes the file
+        fclose($temp);
     }
 
     /**
+     * @return array{host: string, port: int, dbname: string, user: string, password: string}
+     */
+    private function getConnectionParams(): array
+    {
+        $params = $this->connection->getParams();
+        if (isset($params['url'])) {
+            $parsed = parse_url($params['url']);
+            return [
+                'host' => $parsed['host'] ?? 'localhost',
+                'port' => isset($parsed['port']) ? (int) $parsed['port'] : 3306,
+                'dbname' => ltrim($parsed['path'] ?? '', '/'),
+                'user' => $parsed['user'] ?? '',
+                'password' => $parsed['pass'] ?? '',
+            ];
+        }
+        return [
+            'host' => $params['host'] ?? 'localhost',
+            'port' => isset($params['port']) ? (int) $params['port'] : 3306,
+            'dbname' => $params['dbname'] ?? '',
+            'user' => $params['user'] ?? $params['username'] ?? '',
+            'password' => $params['password'] ?? '',
+        ];
+    }
+
+    /**
+     * @param array{host: string, user: string, password: string} $params
      * @return resource
      */
-    private function getTemporaryCredentialsFile()
+    private function getTemporaryCredentialsFile(array $params)
     {
-        $conf = Config::getSystemConfig(true);
-
         $temp = tmpfile();
         $credentials = join("\n", [
             '[client]',
-            'user = ' . $conf->database->params->username,
-            'password = ' . $conf->database->params->password,
-            'host = ' . $conf->database->params->host
+            'user = ' . $params['user'],
+            'password = ' . $params['password'],
+            'host = ' . $params['host']
         ]);
         fwrite($temp, $credentials);
 
         return $temp;
     }
 
-    /**
-     * @param $filePath
-     */
-    private function loadFromCache($filePath)
+    private function loadFromCache(string $filePath): void
     {
-        $conf = Config::getSystemConfig(true);
-
-        //Store the mysql credentials else mysql will complain
-
-        $temp = $this->getTemporaryCredentialsFile();
+        $params = $this->getConnectionParams();
+        $temp = $this->getTemporaryCredentialsFile($params);
 
         $metaData = stream_get_meta_data($temp);
         $tmpFilePath = $metaData['uri'];
@@ -152,13 +170,13 @@ class LoadFixturesCommand extends AbstractCommand
         $mysqlLoadCommand = join(' ', [
             'mysql',
             '--defaults-file=' . $tmpFilePath,
-            '--port ' . $conf->database->params->port,
-            $conf->database->params->dbname,
+            '--port ' . ($params['port'] ?? 3306),
+            $params['dbname'],
             ' < ' . $filePath
         ]);
 
         system($mysqlLoadCommand);
 
-        fclose($temp); // this removes the file
+        fclose($temp);
     }
 }
