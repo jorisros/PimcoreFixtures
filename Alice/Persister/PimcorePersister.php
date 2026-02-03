@@ -42,7 +42,7 @@ class PimcorePersister implements PersisterInterface
      * @param DataObject\Concrete|Document|Asset array [object] $objects instance to persist in the DB
      * @throws \Exception
      */
-    public function persist($object)
+    public function persist(object $object): void
     {
             switch (true) {
                 case $object instanceof AbstractElement:
