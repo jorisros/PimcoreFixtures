@@ -14,6 +14,21 @@ services:
     arguments:
       $bundle: '@=service("kernel").getBundle("FixtureBundle")'
 
+  # Faker: required by Alice providers (Assets, General, DateTime, ObjectReference)
+  Faker\Generator:
+    factory: ['Faker\Factory', 'create']
+
+  # AliceDataFixtures: provide LoaderInterface and PersisterInterface for FixtureLoader
+  Nelmio\Alice\Loader\NativeLoader: ~
+
+  Fidry\AliceDataFixtures\Loader\SimpleLoader:
+    arguments:
+      $filesLoader: '@Nelmio\Alice\Loader\NativeLoader'
+
+  Fidry\AliceDataFixtures\LoaderInterface: '@Fidry\AliceDataFixtures\Loader\SimpleLoader'
+
+  Fidry\AliceDataFixtures\Persistence\PersisterInterface: '@FixtureBundle\Alice\Persister\PimcorePersister'
+
   FixtureBundle\Command\:
     resource: '../../Command'
     tags: ['console.command']
@@ -23,3 +38,11 @@ services:
 
   FixtureBundle\Alice\:
     resource: '../../Alice'
+    exclude: 'Persister/PimcorePersister.php'
+
+  # Explicit definition after resource so it overrides; bool args cannot be autowired
+  FixtureBundle\Alice\Persister\PimcorePersister:
+    autowire: false
+    arguments:
+      $checkPathExists: true
+      $omitValidation: false

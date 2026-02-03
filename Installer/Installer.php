@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace FixtureBundle\Installer;
 
 use Pimcore\Extension\Bundle\Installer\SettingsStoreAwareInstaller;
-use Pimcore\File;
 
 class Installer extends SettingsStoreAwareInstaller
 {
@@ -17,7 +16,7 @@ class Installer extends SettingsStoreAwareInstaller
     public function install(): void
     {
         if (!is_dir(self::FIXTURE_FOLDER)) {
-            File::mkdir(self::FIXTURE_FOLDER);
+            mkdir(self::FIXTURE_FOLDER, 0755, true);
             $this->getOutput()->writeln('Created fixtures directory: ' . self::FIXTURE_FOLDER);
         }
 

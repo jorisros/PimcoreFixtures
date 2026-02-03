@@ -8,7 +8,6 @@
 
 namespace FixtureBundle\Service;
 
-use Pimcore\File;
 use Pimcore\Model\Element\AbstractElement;
 use Pimcore\Model\DataObject\AbstractObject;
 use Pimcore\Model\DataObject\Folder;
@@ -112,7 +111,7 @@ class Generator
 
         $fixturesFolder = FixtureLoader::FIXTURE_FOLDER . '_generated' . DIRECTORY_SEPARATOR;
         if (!is_dir($fixturesFolder)) {
-            File::mkdir($fixturesFolder);
+            mkdir($fixturesFolder);
         }
         $class = strtolower(preg_replace('/(?<!^)[A-Z]+/', '_$0', $class));
 

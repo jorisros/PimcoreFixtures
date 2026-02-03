@@ -39,7 +39,8 @@ class LoadFixturesCommand extends AbstractCommand
         $withCache = $input->getOption('with-cache');
         $files = $input->getOption('files') ? explode(',', $input->getOption('files')) : null;
         $fixtureFiles = FixtureLoader::getFixturesFiles($files);
-        $fingerPrintFilePath = PIMCORE_TEMPORARY_DIRECTORY . '/pimcore_fixtures_cache_' . $this->getSha1FromFixtures($fixtureFiles). '.sql';
+        $tempDir = defined('PIMCORE_SYSTEM_TEMP_DIRECTORY') ? PIMCORE_SYSTEM_TEMP_DIRECTORY : (defined('PIMCORE_TEMPORARY_DIRECTORY') ? PIMCORE_TEMPORARY_DIRECTORY : sys_get_temp_dir());
+        $fingerPrintFilePath = $tempDir . '/pimcore_fixtures_cache_' . $this->getSha1FromFixtures($fixtureFiles). '.sql';
 
         if ($withCache === false || file_exists($fingerPrintFilePath) === false) {
             $steps = $withCache ? count($fixtureFiles) + 1 : count($fixtureFiles);

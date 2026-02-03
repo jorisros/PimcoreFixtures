@@ -9,7 +9,6 @@ use FixtureBundle\Alice\Processor\DocumentProperties;
 use FixtureBundle\Alice\Processor\UserProcessor;
 use FixtureBundle\Alice\Processor\WorkspaceProcessor;
 use FixtureBundle\Alice\Providers\ObjectReference;
-use Pimcore\File;
 
 class FixtureLoader
 {
@@ -95,7 +94,7 @@ class FixtureLoader
     {
         foreach ($folders as $folder) {
             if (!is_dir($folder)) {
-                File::mkdir($folder);
+                mkdir($folder, 0777, true);
             }
         }
     }

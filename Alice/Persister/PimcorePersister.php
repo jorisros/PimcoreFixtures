@@ -160,7 +160,7 @@ class PimcorePersister implements PersisterInterface
         return $obj;
     }
 
-    public function flush()
+    public function flush(): void
     {
         // TODO: Implement flush() method.
     }
